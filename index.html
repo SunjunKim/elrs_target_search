@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -370,6 +369,19 @@
             layoutFileResult.textContent = '';
         }
 
+        function customStringifyReplacer(key, value) {
+            if (Array.isArray(value)) {
+                return JSON.stringify(value);
+            }
+            return value;
+        }
+
+        const customStringify = (obj, space) => {
+            const jsonString = JSON.stringify(obj, customStringifyReplacer, space);
+            return jsonString.replace(/"\[(.*?)\]"/g, '[$1]');
+        };    
+
+
         // Function to display layout file based on selected product
         async function displayLayoutFile() {
             const revModuleTypeSelect = document.getElementById('revModuleTypeSelect');
@@ -395,7 +407,7 @@
             logDebug(`Layout file displayed for product: ${selectedProduct}`);
 
             const overlay = overlayMapping[selectedManufacturer]?.[selectedModuleType]?.[selectedProduct];
-            overlayResult.textContent = overlay ? JSON.stringify(overlay, null, 2) : 'No overlay available';
+            overlayResult.textContent = overlay ? customStringify(overlay, 2) : 'No overlay available';
             logDebug(`Overlay displayed for product: ${selectedProduct}`);
 
             // Fetch and display layout JSON
@@ -407,7 +419,7 @@
                     throw new Error('Network response was not ok ' + response.statusText);
                 }
                 const layoutJson = await response.json();
-                layoutJsonResult.textContent = JSON.stringify(layoutJson, null, 2);
+                layoutJsonResult.textContent = customStringify(layoutJson, 2);
                 logDebug(`Layout JSON fetched and displayed for product: ${selectedProduct}`);
             } catch (error) {
                 console.error('Error fetching layout JSON:', error);
@@ -460,6 +472,7 @@
             layoutFileSelect.value = layoutFile;
             updateProducts();
         }
+
 
         // Fetch and process JSON data on page load
         window.onload = fetchJsonData;
