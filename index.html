@@ -70,7 +70,7 @@
     <div class="container">
         <h1>Search Manufacturer/Product by Layout File</h1>
         <label for="moduleTypeSelect">Select Module Type:</label>
-        <select id="moduleTypeSelect" onchange="updateLayoutFiles()">
+        <select id="moduleTypeSelect" onchange="updateLayoutFiles(); updateUrlParams();">
             <option value="" selected>Select Unit Type and Band</option>
             <!-- Options will be populated dynamically -->
         </select>
@@ -78,7 +78,7 @@
         <br><br>
 
         <label for="layoutFileSelect">Select Layout File:</label>
-        <select id="layoutFileSelect" onchange="updateProducts()">
+        <select id="layoutFileSelect" onchange="updateProducts(); updateUrlParams();">
             <option value="" selected>Select Layout File</option>
             <!-- Options will be populated dynamically -->
         </select>
@@ -92,7 +92,7 @@
     <div class="container">
         <h1>Search Layout by Manufacturer/Product Name</h1>
         <label for="revModuleTypeSelect">Select Module Type:</label>
-        <select id="revModuleTypeSelect" onchange="updateManufacturers()">
+        <select id="revModuleTypeSelect" onchange="updateManufacturers(); updateUrlParams();">
             <option value="" selected>Select Unit Type and Band</option>
             <!-- Options will be populated dynamically -->
         </select>
@@ -100,7 +100,7 @@
         <br><br>
 
         <label for="manufacturerSelect">Select Manufacturer:</label>
-        <select id="manufacturerSelect" onchange="updateProductsByManufacturer()">
+        <select id="manufacturerSelect" onchange="updateProductsByManufacturer(); updateUrlParams();">
             <option value="" selected>Select Manufacturer</option>
             <!-- Options will be populated dynamically -->
         </select>
@@ -108,13 +108,13 @@
         <br><br>
 
         <label for="productSelect">Select Product:</label>
-        <select id="productSelect" onchange="displayLayoutFile()">
+        <select id="productSelect" onchange="displayLayoutFile(); updateUrlParams();">
             <option value="" selected>Select Product</option>
             <!-- Options will be populated dynamically -->
         </select>
 
         <h2>Layout File:</h2>
-        <p id="layoutFileResult" onclick="loadLayoutFileIntoLeftPane(this.textContent)">
+        <p id="layoutFileResult" onclick="loadLayoutFileIntoLeftPane(this.textContent); updateUrlParams();">
             <!-- Layout file will be displayed here -->
         </p>
 
@@ -144,7 +144,45 @@
         let productNameMapping = {};
         let overlayMapping = {};
 
-        // Function to fetch and process JSON data
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                moduleType: params.get('moduleType') || '',
+                layoutFile: params.get('layoutFile') || '',
+                revModuleType: params.get('revModuleType') || '',
+                manufacturer: params.get('manufacturer') || '',
+                product: params.get('product') || ''
+            };
+        }
+
+        function updateUrlParams() {
+            const params = new URLSearchParams();
+            const moduleTypeSelect = document.getElementById('moduleTypeSelect');
+            const layoutFileSelect = document.getElementById('layoutFileSelect');
+            const revModuleTypeSelect = document.getElementById('revModuleTypeSelect');
+            const manufacturerSelect = document.getElementById('manufacturerSelect');
+            const productSelect = document.getElementById('productSelect');
+
+            if (moduleTypeSelect.value) {
+                params.set('moduleType', moduleTypeSelect.value);
+            }
+            if (layoutFileSelect.value) {
+                params.set('layoutFile', layoutFileSelect.value);
+            }
+            if (revModuleTypeSelect.value) {
+                params.set('revModuleType', revModuleTypeSelect.value);
+            }
+            if (manufacturerSelect.value) {
+                params.set('manufacturer', manufacturerSelect.value);
+            }
+            if (productSelect.value) {
+                params.set('product', productSelect.value);
+            }
+
+            const newUrl = `${window.location.pathname}?${params.toString()}`;
+            window.history.replaceState({}, '', newUrl);
+        }
+
         async function fetchJsonData() {
             try {
                 logDebug('Fetching JSON data...');
@@ -160,11 +198,9 @@
             }
         }
 
-        // Function to process JSON data
         function processJsonData(jsonData) {
             const moduleTypes = new Set();
 
-            // Populate module types, layout files, and product mapping
             for (const manufacturer in jsonData) {
                 const manufacturerName = jsonData[manufacturer].name;
                 for (const moduleType in jsonData[manufacturer]) {
@@ -224,9 +260,10 @@
 
             populateModuleTypeDropdown(Array.from(moduleTypes).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())));
             populateRevModuleTypeDropdown(Array.from(moduleTypes).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())));
+
+            applyUrlParams();
         }
 
-        // Function to populate module type dropdown
         function populateModuleTypeDropdown(moduleTypes) {
             const moduleTypeSelect = document.getElementById('moduleTypeSelect');
             moduleTypes.forEach(type => {
@@ -238,7 +275,6 @@
             logDebug('Module type dropdown populated');
         }
 
-        // Function to update layout files based on selected module type
         function updateLayoutFiles() {
             const moduleTypeSelect = document.getElementById('moduleTypeSelect');
             const layoutFileSelect = document.getElementById('layoutFileSelect');
@@ -247,14 +283,13 @@
             layoutFileSelect.innerHTML = '<option value="" selected>Select Layout File</option>';
 
             if (selectedModuleType === '') {
-                // Clear the results list if no module type is selected
                 const resultsList = document.getElementById('resultsList');
                 resultsList.innerHTML = '';
                 return;
             }
 
             const layoutFiles = Array.from(moduleTypeMapping[selectedModuleType] || new Set()).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-            
+
             layoutFiles.forEach(file => {
                 const option = document.createElement('option');
                 option.value = file;
@@ -262,13 +297,11 @@
                 layoutFileSelect.appendChild(option);
             });
             logDebug(`Layout file dropdown updated for module type: ${selectedModuleType}`);
-            
-            // Clear the results list when module type is changed
+
             const resultsList = document.getElementById('resultsList');
             resultsList.innerHTML = '';
         }
 
-        // Function to update products list based on selected layout file
         function updateProducts() {
             const layoutFileSelect = document.getElementById('layoutFileSelect');
             const resultsList = document.getElementById('resultsList');
@@ -278,13 +311,12 @@
             products.forEach(product => {
                 const li = document.createElement('li');
                 li.textContent = product;
-                li.onclick = () => loadProductIntoRightPane(product);
+                li.onclick = () => { loadProductIntoRightPane(product); updateUrlParams(); };
                 resultsList.appendChild(li);
             });
             logDebug(`Products updated for layout file: ${selectedFile}`);
         }
 
-        // Function to populate reverse module type dropdown
         function populateRevModuleTypeDropdown(moduleTypes) {
             const revModuleTypeSelect = document.getElementById('revModuleTypeSelect');
             moduleTypes.forEach(type => {
@@ -296,7 +328,6 @@
             logDebug('Reverse module type dropdown populated');
         }
 
-        // Function to update manufacturers based on selected module type
         function updateManufacturers() {
             const revModuleTypeSelect = document.getElementById('revModuleTypeSelect');
             const manufacturerSelect = document.getElementById('manufacturerSelect');
@@ -306,7 +337,6 @@
             manufacturerSelect.innerHTML = '<option value="" selected>Select Manufacturer</option>';
 
             if (selectedModuleType === '') {
-                // Clear the products and layout file result if no module type is selected
                 const productSelect = document.getElementById('productSelect');
                 const layoutFileResult = document.getElementById('layoutFileResult');
                 productSelect.innerHTML = '<option value="" selected>Select Product</option>';
@@ -315,7 +345,7 @@
             }
 
             const manufacturers = Array.from(manufacturerMapping[selectedModuleType] || new Set()).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-            
+
             manufacturers.forEach(manufacturer => {
                 const option = document.createElement('option');
                 option.value = manufacturer;
@@ -323,21 +353,18 @@
                 manufacturerSelect.appendChild(option);
             });
             logDebug(`Manufacturer dropdown updated for module type: ${selectedModuleType}`);
-            
-            // Clear the products and layout file result when module type is changed
+
             const productSelect = document.getElementById('productSelect');
             const layoutFileResult = document.getElementById('layoutFileResult');
             productSelect.innerHTML = '<option value="" selected>Select Product</option>';
             layoutFileResult.textContent = '';
 
-            // If the previously selected manufacturer is available in the new listing, make it selected
             if (manufacturers.includes(previouslySelectedManufacturer)) {
                 manufacturerSelect.value = previouslySelectedManufacturer;
                 updateProductsByManufacturer();
             }
         }
 
-        // Function to update products based on selected manufacturer
         function updateProductsByManufacturer() {
             const revModuleTypeSelect = document.getElementById('revModuleTypeSelect');
             const manufacturerSelect = document.getElementById('manufacturerSelect');
@@ -348,14 +375,13 @@
             productSelect.innerHTML = '<option value="" selected>Select Product</option>';
 
             if (selectedManufacturer === '') {
-                // Clear the layout file result if no manufacturer is selected
                 const layoutFileResult = document.getElementById('layoutFileResult');
                 layoutFileResult.textContent = '';
                 return;
             }
 
             const products = Object.keys(productNameMapping[selectedManufacturer]?.[selectedModuleType] || {}).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-            
+
             products.forEach(product => {
                 const option = document.createElement('option');
                 option.value = product;
@@ -363,8 +389,7 @@
                 productSelect.appendChild(option);
             });
             logDebug(`Product dropdown updated for manufacturer: ${selectedManufacturer}`);
-            
-            // Clear the layout file result when manufacturer is changed
+
             const layoutFileResult = document.getElementById('layoutFileResult');
             layoutFileResult.textContent = '';
         }
@@ -379,10 +404,8 @@
         const customStringify = (obj, space) => {
             const jsonString = JSON.stringify(obj, customStringifyReplacer, space);
             return jsonString.replace(/"\[(.*?)\]"/g, '[$1]');
-        };    
+        };
 
-
-        // Function to display layout file based on selected product
         async function displayLayoutFile() {
             const revModuleTypeSelect = document.getElementById('revModuleTypeSelect');
             const manufacturerSelect = document.getElementById('manufacturerSelect');
@@ -403,14 +426,13 @@
 
             const layoutFile = productNameMapping[selectedManufacturer]?.[selectedModuleType]?.[selectedProduct];
             layoutFileResult.textContent = layoutFile;
-            layoutFileResult.onclick = () => loadLayoutFileIntoLeftPane(layoutFile);
+            layoutFileResult.onclick = () => { loadLayoutFileIntoLeftPane(layoutFile); updateUrlParams(); };
             logDebug(`Layout file displayed for product: ${selectedProduct}`);
 
             const overlay = overlayMapping[selectedManufacturer]?.[selectedModuleType]?.[selectedProduct];
             overlayResult.textContent = overlay ? customStringify(overlay, 2) : 'No overlay available';
             logDebug(`Overlay displayed for product: ${selectedProduct}`);
 
-            // Fetch and display layout JSON
             const txOrRx = selectedModuleType.startsWith('tx') ? 'TX' : 'RX';
             const layoutJsonUrl = `https://raw.githubusercontent.com/ExpressLRS/targets/master/${txOrRx}/${layoutFile}`;
             try {
@@ -427,14 +449,12 @@
             }
         }
 
-        // Function to load product into the right pane
         function loadProductIntoRightPane(product) {
             const [manufacturerName, productName] = product.split(' / ');
             const revModuleTypeSelect = document.getElementById('revModuleTypeSelect');
             const manufacturerSelect = document.getElementById('manufacturerSelect');
             const productSelect = document.getElementById('productSelect');
 
-            // Find the module type for the selected product
             let selectedModuleType;
             for (const moduleType in productNameMapping[manufacturerName]) {
                 if (productNameMapping[manufacturerName][moduleType][productName]) {
@@ -443,21 +463,19 @@
                 }
             }
 
-            // Set the module type, manufacturer, and product in the right pane
             revModuleTypeSelect.value = selectedModuleType;
             updateManufacturers();
             manufacturerSelect.value = manufacturerName;
             updateProductsByManufacturer();
             productSelect.value = productName;
             displayLayoutFile();
+            updateUrlParams();
         }
 
-        // Function to load layout file into the left pane
         function loadLayoutFileIntoLeftPane(layoutFile) {
             const moduleTypeSelect = document.getElementById('moduleTypeSelect');
             const layoutFileSelect = document.getElementById('layoutFileSelect');
 
-            // Find the module type for the selected layout file
             let selectedModuleType;
             for (const moduleType in moduleTypeMapping) {
                 if (moduleTypeMapping[moduleType].has(layoutFile)) {
@@ -466,15 +484,44 @@
                 }
             }
 
-            // Set the module type and layout file in the left pane
             moduleTypeSelect.value = selectedModuleType;
             updateLayoutFiles();
             layoutFileSelect.value = layoutFile;
             updateProducts();
+            updateUrlParams();
         }
 
+        function applyUrlParams() {
+            const params = getUrlParams();
+            const moduleTypeSelect = document.getElementById('moduleTypeSelect');
+            const layoutFileSelect = document.getElementById('layoutFileSelect');
+            const revModuleTypeSelect = document.getElementById('revModuleTypeSelect');
+            const manufacturerSelect = document.getElementById('manufacturerSelect');
+            const productSelect = document.getElementById('productSelect');
 
-        // Fetch and process JSON data on page load
+            if (params.moduleType) {
+                moduleTypeSelect.value = params.moduleType;
+                updateLayoutFiles();
+                if (params.layoutFile) {
+                    layoutFileSelect.value = params.layoutFile;
+                    updateProducts();
+                }
+            }
+
+            if (params.revModuleType) {
+                revModuleTypeSelect.value = params.revModuleType;
+                updateManufacturers();
+                if (params.manufacturer) {
+                    manufacturerSelect.value = params.manufacturer;
+                    updateProductsByManufacturer();
+                    if (params.product) {
+                        productSelect.value = params.product;
+                        displayLayoutFile();
+                    }
+                }
+            }
+        }
+
         window.onload = fetchJsonData;
     </script>
 </body>
