@@ -430,7 +430,7 @@
             logDebug(`Layout file displayed for product: ${selectedProduct}`);
 
             const overlay = overlayMapping[selectedManufacturer]?.[selectedModuleType]?.[selectedProduct];
-            overlayResult.textContent = overlay ? customStringify(overlay, 2) : 'No overlay available';
+            overlayResult.textContent = overlay ? customStringify(overlay, 2) : 'No overlay';
             logDebug(`Overlay displayed for product: ${selectedProduct}`);
 
             const txOrRx = selectedModuleType.startsWith('tx') ? 'TX' : 'RX';
