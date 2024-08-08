@@ -174,13 +174,9 @@
             const results = [];
 
             for (const manufacturer in productNameMapping) {
-                if (manufacturer.toLowerCase().includes(searchTerm)) {
-                    results.push(manufacturer);
-                }
-
                 for (const moduleType in productNameMapping[manufacturer]) {
                     for (const product in productNameMapping[manufacturer][moduleType]) {
-                        if (product.toLowerCase().includes(searchTerm)) {
+                        if (fuzzyMatch(product.toLowerCase(), searchTerm)) {
                             results.push(`${manufacturer} / ${product}`);
                         }
                     }
@@ -197,6 +193,31 @@
                     resultsList.appendChild(li);
                 });
             }
+        }
+
+        function fuzzyMatch(str, pattern) {
+            const patternLen = pattern.length;
+            const strLen = str.length;
+            if (patternLen > strLen) {
+                return false;
+            }
+            if (patternLen === 0) {
+                return true;
+            }
+
+            let patternIdx = 0;
+            let strIdx = 0;
+
+            while (strIdx < strLen) {
+                if (str[strIdx] === pattern[patternIdx]) {
+                    patternIdx++;
+                }
+                if (patternIdx === patternLen) {
+                    return true;
+                }
+                strIdx++;
+            }
+            return false;
         }
 
         function updateUrlParams() {
