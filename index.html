@@ -32,7 +32,7 @@
             font-weight: bold;
             color: #555;
         }
-        select, p {
+        select, p, input {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
@@ -69,6 +69,12 @@
 <body>
     <div class="container">
         <h1>Search Manufacturer/Product by Layout File</h1>
+        <label for="searchBox">Search Manufacturer/Product by Name:</label>
+        <input type="text" id="searchBox" oninput="fuzzySearch();" placeholder="Type Manufacturer or Product name to search">
+
+        <br><br>
+
+
         <label for="moduleTypeSelect">Select Module Type:</label>
         <select id="moduleTypeSelect" onchange="updateLayoutFiles(); updateUrlParams();">
             <option value="" selected>Select Unit Type and Band</option>
@@ -153,6 +159,44 @@
                 manufacturer: params.get('manufacturer') || '',
                 product: params.get('product') || ''
             };
+        }
+
+        function fuzzySearch() {
+            const searchBox = document.getElementById('searchBox');
+            const searchTerm = searchBox.value.toLowerCase();
+            const resultsList = document.getElementById('resultsList');
+            resultsList.innerHTML = '';
+
+            if (!searchTerm) {
+                return;
+            }
+
+            const results = [];
+
+            for (const manufacturer in productNameMapping) {
+                if (manufacturer.toLowerCase().includes(searchTerm)) {
+                    results.push(manufacturer);
+                }
+
+                for (const moduleType in productNameMapping[manufacturer]) {
+                    for (const product in productNameMapping[manufacturer][moduleType]) {
+                        if (product.toLowerCase().includes(searchTerm)) {
+                            results.push(`${manufacturer} / ${product}`);
+                        }
+                    }
+                }
+            }
+
+            if (results.length === 0) {
+                resultsList.innerHTML = '<li>No results found</li>';
+            } else {
+                results.forEach(result => {
+                    const li = document.createElement('li');
+                    li.textContent = result;
+                    li.onclick = () => loadProductIntoRightPane(result);
+                    resultsList.appendChild(li);
+                });
+            }
         }
 
         function updateUrlParams() {
